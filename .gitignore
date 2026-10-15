@@ -1,0 +1,8 @@
+# 本地密钥文件：含真实 Cloudflare Token，绝不能提交/部署
+config.json
+
+# 本地运行用的文件（部署到 Cloudflare 不需要）
+server.js
+start.bat
+node_modules/
+*.log

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>艾米老师 · 英语口语私教</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: linear-gradient(160deg, #eaf4ff 0%, #fff6ef 100%);
+    color: #2c3e50; min-height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+    background: #ffffffcc; backdrop-filter: blur(6px);
+    box-shadow: 0 2px 10px #00000010; position: sticky; top: 0; z-index: 5;
+  }
+  .logo { font-size: 30px; }
+  .title { font-size: 20px; font-weight: 800; }
+  .sub { font-size: 12px; color: #8a97a8; }
+  .spacer { flex: 1; }
+  .ctrl {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5a6b7b;
+    background: #f1f5fa; padding: 6px 10px; border-radius: 20px;
+  }
+  select, .gear {
+    border: none; background: #e8eefc; color: #34507a; border-radius: 14px;
+    padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .gear { font-size: 16px; }
+
+  #chat { flex: 1; overflow-y: auto; padding: 18px 16px 10px; display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; align-items: flex-end; gap: 10px; max-width: 860px; width: 100%; margin: 0 auto; }
+  .row.child { flex-direction: row-reverse; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .avatar.teacher { background: #ffe1c4; }
+  .avatar.child { background: #d9ecff; }
+  .bubble {
+    padding: 12px 15px; border-radius: 18px; font-size: 17px; line-height: 1.5;
+    max-width: 75%; white-space: pre-wrap; word-break: break-word;
+  }
+  .row.teacher .bubble { background: #fff; border: 1px solid #ffe6cf; border-bottom-left-radius: 6px; }
+  .row.child .bubble { background: #d9ecff; border-bottom-right-radius: 6px; }
+  .replay {
+    margin-top: 6px; font-size: 12px; color: #7b8aa0; cursor: pointer;
+    background: #f3f7fc; border: none; border-radius: 12px; padding: 4px 10px;
+  }
+
+  #preview {
+    text-align: center; color: #5a6b7b; font-size: 16px; min-height: 22px; padding: 4px;
+  }
+
+  footer {
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); background: #ffffffcc;
+    backdrop-filter: blur(6px); box-shadow: 0 -2px 10px #00000010; position: sticky; bottom: 0;
+  }
+  .footer-inner { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #micBtn {
+    width: 92px; height: 92px; border-radius: 50%; border: none; cursor: pointer;
+    background: radial-gradient(circle at 30% 30%, #6db1ff, #2f7be0); color: #fff;
+    font-size: 40px; box-shadow: 0 8px 20px #2f7be055; transition: transform .1s, background .2s;
+  }
+  #micBtn.listening { background: radial-gradient(circle at 30% 30%, #ff9a76, #ff6b4a); animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.08);} 100%{transform:scale(1);} }
+  #status { font-size: 14px; color: #6b7a8c; min-height: 18px; }
+
+  .modal-bg { position: fixed; inset: 0; background: #00000055; display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
+  .modal-bg.show { display: flex; }
+  .modal { background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 420px; box-shadow: 0 12px 40px #00000030; }
+  .modal h3 { margin: 0 0 6px; }
+  .modal p { font-size: 13px; color: #7b8aa0; margin: 0 0 14px; line-height: 1.5; }
+  .modal label { display: block; font-size: 13px; margin: 10px 0 4px; color: #445; }
+  .modal input { width: 100%; padding: 10px 12px; border: 1px solid #d8e0ec; border-radius: 10px; font-size: 14px; font-family: inherit; }
+  .modal .hint { font-size: 12px; color: #9aa7b6; margin-top: 4px; }
+  .modal .actions { margin-top: 18px; display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 11px; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .btn.primary { background: #2f7be0; color: #fff; }
+  .btn.ghost { background: #eef2f7; color: #445; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo">🦊</div>
+    <div>
+      <div class="title">艾米老师 · 英语口语私教</div>
+      <div class="sub">点麦克风，孩子开口说，老师用英语回答并念出来</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="ctrl">
+      <span>识别语言</span>
+      <select id="langSelect">
+        <option value="zh-CN">中文</option>
+        <option value="en-US">英语</option>
+      </select>
+    </div>
+    <button class="gear" id="gearBtn" title="设置">⚙️</button>
+  </header>
+
+  <div id="chat"></div>
+  <div id="preview"></div>
+
+  <footer>
+    <div class="footer-inner">
+      <button id="micBtn">🎤</button>
+      <div id="status">点上面的麦克风，让孩子开始说吧</div>
+    </div>
+  </footer>
+
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <h3>⚙️ 设置（只需填一次）</h3>
+      <p>老师的"大脑"需要一个模型 Key。本地版可用 DeepSeek 或 Cloudflare Worker AI 的 Key，填一次保存在本机，下次自动用。（部署到 Cloudflare Pages 后由网站后台自动完成，孩子无需填写。）</p>
+      <label>API Key</label>
+      <input id="apiKeyInput" placeholder="sk-..." autocomplete="off" />
+      <div class="hint">本地用：去 platform.deepseek.com 注册充值，或用 Cloudflare 的 Worker AI Token</div>
+      <label>模型名</label>
+      <input id="modelInput" value="deepseek-chat" />
+      <label>接口地址</label>
+      <input id="baseUrlInput" value="https://api.deepseek.com/v1" />
+      <div class="actions">
+        <button class="btn ghost" id="cancelBtn">稍后</button>
+        <button class="btn primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var chatEl = document.getElementById('chat');
+  var previewEl = document.getElementById('preview');
+  var micBtn = document.getElementById('micBtn');
+  var statusEl = document.getElementById('status');
+  var langSelect = document.getElementById('langSelect');
+  var gearBtn = document.getElementById('gearBtn');
+  var modalBg = document.getElementById('modalBg');
+  var apiKeyInput = document.getElementById('apiKeyInput');
+  var modelInput = document.getElementById('modelInput');
+  var baseUrlInput = document.getElementById('baseUrlInput');
+
+  var history = [];
+  var listening = false;
+  var rec = null;
+  var finalTranscript = '';
+  var voices = [];
+
+  function loadVoices() { voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : []; }
+  if (window.speechSynthesis) {
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  function pickVoice(lang) {
+    if (!voices.length) return null;
+    var pref = lang === 'en-US' ? 'en' : 'zh';
+    var v = voices.filter(function (x) { return x.lang && x.lang.toLowerCase().indexOf(pref) === 0; })[0];
+    if (!v) v = voices.filter(function (x) { return x.lang && x.lang.toLowerCase().indexOf(lang.slice(0,2)) === 0; })[0];
+    return v || null;
+  }
+  function speak(text) {
+    if (!window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel();
+    var chunks = text.split(/(?<=[.!?。！？])\s*/);
+    var i = 0;
+    function next() {
+      if (i >= chunks.length) return;
+      var chunk = chunks[i++].trim();
+      if (!chunk) return next();
+      var hasLatin = /[A-Za-z]/.test(chunk);
+      var lang = hasLatin ? 'en-US' : 'zh-CN';
+      var u = new SpeechSynthesisUtterance(chunk);
+      var v = pickVoice(lang);
+      if (v) u.voice = v;
+      u.lang = lang;
+      u.rate = 0.9;
+      u.onend = next;
+      window.speechSynthesis.speak(u);
+    }
+    next();
+  }
+
+  function addBubble(role, text) {
+    var row = document.createElement('div');
+    row.className = 'row ' + role;
+    var av = document.createElement('div');
+    av.className = 'avatar ' + role;
+    av.textContent = role === 'teacher' ? '🦊' : '🧒';
+    var wrap = document.createElement('div');
+    var b = document.createElement('div');
+    b.className = 'bubble';
+    b.textContent = text;
+    wrap.appendChild(b);
+    if (role === 'teacher') {
+      var rep = document.createElement('button');
+      rep.className = 'replay';
+      rep.textContent = '🔊 再听一次';
+      rep.onclick = function () { speak(text); };
+      wrap.appendChild(rep);
+    }
+    row.appendChild(av);
+    row.appendChild(wrap);
+    chatEl.appendChild(row);
+    chatEl.scrollTop = chatEl.scrollHeight;
+    return row;
+  }
+
+  function setStatus(s) { statusEl.textContent = s; }
+
+  function initRec() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setStatus('当前浏览器不支持语音识别，请用 Chrome 或 Edge'); return null; }
+    rec = new SR();
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = function (e) {
+      var interim = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        var t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalTranscript += t; else interim += t;
+      }
+      previewEl.textContent = finalTranscript + interim;
+    };
+    rec.onend = function () {
+      listening = false;
+      micBtn.classList.remove('listening');
+      micBtn.textContent = '🎤';
+      var text = finalTranscript.trim();
+      previewEl.textContent = '';
+      if (text) {
+        addBubble('child', text);
+        history.push({ role: 'user', content: text });
+        talkToTeacher();
+      } else {
+        setStatus('没听清，再点一下麦克风试试');
+      }
+    };
+    rec.onerror = function (e) { setStatus('语音识别出错：' + e.error); };
+    return rec;
+  }
+
+  function startListen() {
+    if (!rec && !initRec()) return;
+    rec.lang = langSelect.value;
+    finalTranscript = '';
+    try { rec.start(); } catch (e) {}
+    listening = true;
+    micBtn.classList.add('listening');
+    micBtn.textContent = '⏹';
+    setStatus('正在听… 说完点一下停');
+  }
+  function stopListen() {
+    if (rec) { try { rec.stop(); } catch (e) {} }
+  }
+  micBtn.onclick = function () { if (listening) stopListen(); else startListen(); };
+
+  function talkToTeacher() {
+    setStatus('老师在想…');
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history })
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (data.error === 'NO_KEY') { setStatus('请先填一下 API Key'); openModal(); return; }
+      if (data.error) { setStatus('出错了：' + data.message); return; }
+      addBubble('teacher', data.reply);
+      history.push({ role: 'assistant', content: data.reply });
+      speak(data.reply);
+      setStatus('轮到孩子说啦，点麦克风');
+    }).catch(function (e) { setStatus('网络错误：' + e.message); });
+  }
+
+  // settings modal
+  function openModal() { modalBg.classList.add('show'); }
+  function closeModal() { modalBg.classList.remove('show'); }
+  gearBtn.onclick = function () {
+    fetch('/api/config').then(function (r) { return r.json(); }).then(function (c) {
+      modelInput.value = c.model || 'deepseek-chat';
+      baseUrlInput.value = c.baseURL || 'https://api.deepseek.com/v1';
+    });
+    openModal();
+  };
+  document.getElementById('cancelBtn').onclick = closeModal;
+  document.getElementById('saveBtn').onclick = function () {
+    var payload = {
+      apiKey: apiKeyInput.value.trim(),
+      model: modelInput.value.trim(),
+      baseURL: baseUrlInput.value.trim()
+    };
+    fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) { closeModal(); setStatus('已保存，可以开始啦'); }
+      else setStatus('保存失败：' + d.message);
+    });
+  };
+
+  // boot: check key, then greet
+  fetch('/api/config').then(function (r) { return r.json(); }).then(function (c) {
+    if (c.locked) { gearBtn.style.display = 'none'; greet(); return; }
+    if (!c.hasKey) { setStatus('第一次用，请先点右上角 ⚙️ 填一下 API Key'); openModal(); return; }
+    greet();
+  }).catch(function () { setStatus('无法连接服务，请确认网页已启动'); });
+
+  function greet() {
+    setStatus('老师在打招呼…');
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: '(请用极简单的英语和孩子打招呼、做自我介绍，然后问一个轻松的生活小问题，开启今天的口语练习。用孩子能懂的话。)' }] })
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (data.reply) {
+        addBubble('teacher', data.reply);
+        history.push({ role: 'assistant', content: data.reply });
+        speak(data.reply);
+        setStatus('轮到孩子说啦，点麦克风');
+      } else { setStatus('老师没回应，稍后再试'); }
+    }).catch(function (e) { setStatus('出错：' + e.message); });
+  }
+})();
+</script>
+</body>
+</html>
